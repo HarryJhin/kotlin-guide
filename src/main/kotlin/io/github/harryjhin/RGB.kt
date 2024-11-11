@@ -31,10 +31,3 @@ value class RGB(private val value: Int) {
         val BLUE = RGB(0x0000FF)
     }
 }
-
-fun main() {
-    val color = RGB(255, -1, 0)
-    println("R: ${color.red}, G: ${color.green}, B: ${color.blue}. $color")
-    println(RGB.RED.red == color.red)
-    println(RGB.GREEN == RGB(0x00FF00))
-}
