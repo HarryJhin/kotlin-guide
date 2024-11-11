@@ -1,4 +1,4 @@
-package io.github.harryjhin
+package io.github.harryjhin.valueclass
 
 @JvmInline
 value class RGB(private val value: Int) {

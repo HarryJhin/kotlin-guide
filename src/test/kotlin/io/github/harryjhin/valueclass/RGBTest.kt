@@ -1,4 +1,4 @@
-package io.github.harryjhin
+package io.github.harryjhin.valueclass
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
