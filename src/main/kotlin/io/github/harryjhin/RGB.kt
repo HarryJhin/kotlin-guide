@@ -21,7 +21,7 @@ value class RGB(private val value: Int) {
     val green: Int get() = (value shr 8) and 0xFF
     val blue: Int get() = value and 0xFF
 
-    override fun toString(): String = "0x%06X".format(value).uppercase()
+    override fun toString(): String = StringBuilder("0x").append("%06X".format(value).uppercase()).toString()
 
     companion object {
         val BLACK = RGB(0x000000)
