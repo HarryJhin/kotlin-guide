@@ -102,3 +102,103 @@ suspend fun doWorld() {
 중단 함수는 `suspend` 한정자를 가진 함수입니다.
 이러한 함수는 일반 함수처럼 코루틴 내에서 사용할 수 있지만,
 추가적인 특징은 다른 중단 함수(이 경우 `delay`)를 사용하여 코루틴의 실행을 중단할 수 있다는 점입니다.
+
+## Scope 빌더
+
+다양한 빌더가 제공하는 코루틴 스코프 외에도 `coroutineScope` 빌더를 사용하여 사용자 정의 스코프를 선언할 수 있습니다.
+`coroutineScope`는 코루틴 스코프를 생성하며, 시작된 모든 자식 코루틴이 완료될 때까지 완료되지 않습니다.
+
+`runBlocking`과 `coroutineScope` 빌더는 본문과 그 안의 모든 자식 코루틴이 완료될 때까지 대기한다는 점에서 비슷해 보일 수 있습니다.
+그러나 주요 차이점은 `runBlocking`은 현재 스레드를 차단하여 대기하는 반면,
+`coroutineScope`는 단순히 중단되어 기본 스레드를 다른 용도로 사용할 수 있데 해준다는 점입니다.
+이 차이로 인해 `runBlocking`은 일반 함수이고, `coroutineScope`는 중단 함수입니다.
+
+```kotlin
+fun main() = runBlocking {
+    doWorld()
+}
+
+suspend fun doWorld() = coroutineScope {  // this: CoroutineScope
+    launch {
+        delay(1_000L)
+        println("World!")
+    }
+    println("Hello")
+}
+```
+
+이 코드는 다음과 같은 결과를 출력합니다.
+
+```
+Hello
+World!
+```
+
+## Scope 빌더와 동시성
+
+`coroutineScope` 빌더는 중단 함수 내에서 여러 동시 작업을 수행하기 위해 사용할 수 있습니다.
+`doWorld`라는 중단 함수 안에서 두 개의 동시 코루틴을 시작해보겠습니다.
+
+```kotlin
+// Sequentially executes doWorld followed by "Done"
+fun main() = runBlocking {
+    doWorld()
+    println("Done")
+}
+
+// Concurrently executes both sections
+suspend fun doWorld() = coroutineScope { // this: CoroutineScope
+    launch {
+        delay(2_000L)
+        println("World 2")
+    }
+    launch {
+        delay(1_000L)
+        println("World 1")
+    }
+    println("Hello")
+}
+```
+
+이 코드는 다음과 같은 결과를 출력합니다.
+
+```
+Hello
+World 1
+World 2
+Done
+```
+
+`launch { ... }` 블록 내부의 두 코드 조각은 동시에 실행되며, 실행 시작 후 1초가 지나면 "World 1"이 출력되고,
+2초가 지나면 "World 2"가 출력됩니다.
+`doWorld` 내의 `coroutineScope`는 두 코루틴이 모두 완료된 후에만 완료됩니다.
+따라서 `doWorld`는 두 코루틴이 모두 완료된 후에 반환되며, 그제서야 "Done"이 출력됩니다.
+
+## 명시적인 Job
+
+`launch` 코루틴 빌더가 반환하는 Job 객체는 시작된 코루틴에 대한 핸들 역할을 하며 이를 통해 명시적으로 완료될 때까지 기다릴 수 있습니다.
+예를 들어, 자식 코루틴의 완료를 기다린 후에 "Done"을 출력하려면 다음과 같이 할 수 있습니다.
+
+```kotlin
+fun main() = runBlocking {
+    val job = launch {
+        delay(1_000L)
+        println("World!")
+    }
+    println("Hello")
+    job.join() // wait until child coroutine completes
+    println("Done")
+}
+```
+
+이 코드는 다음과 같은 결과를 출력합니다.
+
+```
+Hello
+World!
+Done
+```
+
+## 코루틴은 가볍다
+
+코루틴은 경량이므로 JVM 스레드보다 자원 소모가 적습니다.
